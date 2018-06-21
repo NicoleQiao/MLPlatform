@@ -1,0 +1,81 @@
+import LoadData
+import DisplayData
+import pandas as pd
+import CleanData
+import TrainData
+from sklearn import datasets
+
+#test display data
+'''
+diabetes = datasets.load_iris()
+data=LoadData.np2df(diabetes)
+DisplayData.showStatistic(data)
+DisplayData.showBins(data)
+DisplayData.showStd(data)
+DisplayData.showPlot(data)
+DisplayData.showSubPlot(data)
+DisplayData.showCorrMap(data)
+DisplayData.showSPLOM_G(data)
+'''
+
+#test load data function
+'''
+bpmsnames=LoadData.getTXTpv('E:','bpms.txt')
+data_live=LoadData.generate_live_data(2,['qiaoysHost:ai1','qiaoysHost:ai2'])
+data_raw_char=LoadData.getChanArch('192.168.44.165',16,['BPR:LIFE','R3O:BI:DCCT:CUR'],'04/28/2018 00:00:00','04/28/2018 00:00:30',0)
+LoadData.getKey('192.168.44.165',['BIBPM:R1OBPM02:XPOS','BIBPM:R1OBPM03:XPOS','BIBPM:R1OBPM04:XPOS','BIBPM:R1OBPM05:XPOS','BIBPM:R1OBPM06:XPOS','BIBPM:R1OBPM07:XPOS','BIBPM:R1OBPM08:XPOS'])
+data_format_char=LoadData.getFormatChanArch('192.168.44.165',23,['BIBPM:R1OBPM02:XPOS','BIBPM:R1OBPM03:XPOS','BIBPM:R1OBPM04:XPOS','BIBPM:R1OBPM05:XPOS','BIBPM:R1OBPM06:XPOS','BIBPM:R1OBPM07:XPOS','BIBPM:R1OBPM08:XPOS'],'05/10/2018 08:35:00','05/10/2018 08:38:00','outer',linear,None,0)
+data_arapp=LoadData.getArchAppl('ss',['BPR:LIFE','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'04/28/2018 00:00:00','04/28/2018 00:00:30')
+data=LoadData.getLocalFile('E:','test.csv',0)
+'''
+
+#test merge df
+'''
+data1=LoadData.getFormatChanArch('192.168.44.165',23,['BIBPM:R1OBPM02:XPOS'],'05/10/2018 14:15:00','05/10/2018 14:16:00','outer','linear',None,0)
+data2=LoadData.getFormatChanArch('192.168.44.165',27,['BIBPM:R1OBPM02:STAT'],'05/10/2018 10:15:00','05/10/2018 14:16:00','1',None,'pad',0)
+data3=LoadData.mergeDF(data2,data1,'outer')
+'''
+#test get channel archiver engine keys
+'''
+print(LoadData.getChanArchEngineKey('192.168.44.165','TPS:170323-170728'))
+'''
+#test clean data
+'''
+diabetes = datasets.load_iris()
+data=LoadData.np2df(diabetes)
+CleanData.NormData(data,norm_type="min-max")
+CleanData.EnumData(data,'BPR:LIFE',[1,2.76,2.78,3],True,["small","Medium","big"])
+newdata=data[data['BESIII:LUMAVG']<0.52]
+'''
+
+#test LinearRegression
+'''
+data=LoadData.getFormatChanArch('192.168.44.165',16,['BESIII:LUMAVG','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'05/10/2018 08:35:00','05/10/2018 08:38:00','outer','linear',None,0)
+TrainData.MLLinearRegression(data,'BESIII:LUMAVG')
+
+'''
+
+#test KNN
+'''
+data=LoadData.getFormatChanArch('192.168.44.165',16,['BESIII:LUMAVG','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'05/10/2018 08:35:00','05/10/2018 08:38:00','outer','linear',None,0)
+TrainData.MLKNN(data,'BESIII:LUMAVG')
+'''
+
+#test Logistic Regression
+'''
+diabetes = datasets.load_iris()
+data=LoadData.np2df(diabetes)
+print(data.head())
+X_train, X_test, y_train, y_test=TrainData.split_data(data,"target")
+TrainData.MLLogisticRegression(X_train,X_test,y_train,y_test)
+TrainData.test_LogisticRegression_C(X_train,X_test,y_train,y_test)
+'''
+
+#test DBSCAN
+# iris = datasets.load_iris()
+# X=iris.data
+# labels_true=iris.target
+# TrainData.MLDBSCAN(X,labels_true)
+
+#TrainData.MLKMeans()
+
