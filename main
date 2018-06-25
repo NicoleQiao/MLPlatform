@@ -50,9 +50,17 @@ newdata=data[data['BESIII:LUMAVG']<0.52]
 
 #test LinearRegression
 '''
-data=LoadData.getFormatChanArch('192.168.44.165',16,['BESIII:LUMAVG','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'05/10/2018 08:35:00','05/10/2018 08:38:00','outer','linear',None,0)
-TrainData.MLLinearRegression(data,'BESIII:LUMAVG')
+data = pd.read_csv('E:\CCPP\ccpp.csv')
+X_train, X_test, y_train, y_test =TrainData.split_data(data,'PE')
+TrainData.MLLinearRegression( X_train, X_test, y_train, y_test)
+'''
 
+
+#test PolynimialRegression
+'''
+data = pd.read_csv('E:\CCPP\ccpp.csv')
+X_train, X_test, y_train, y_test =TrainData.split_data(data,'PE')
+TrainData.MLPolynimialRegression( X_train, X_test, y_train, y_test,2)
 '''
 
 #test KNN
@@ -78,4 +86,8 @@ TrainData.test_LogisticRegression_C(X_train,X_test,y_train,y_test)
 # TrainData.MLDBSCAN(X,labels_true)
 
 #TrainData.MLKMeans()
+data=LoadData.getAnalogData()
+data_X=data[['X_end','X_bpm1','X_bpm2']]
+X_train, X_test, y_train, y_test=TrainData.split_data(data_X,"X_end")
+
 

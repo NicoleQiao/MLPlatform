@@ -188,7 +188,6 @@ def mergeDF(left,right,merge_type):
     return data
 def getTXTpv(filepath,filename):
     re=pd.read_table(filepath+'\\'+filename,header=None)
-    #print(re[0].values.tolist())
     return re[0].values.tolist()
 
 def np2df(dataset):
@@ -199,3 +198,33 @@ def np2df(dataset):
     df2 = pd.DataFrame(target, columns=['target'])
     data_df = pd.concat([df1, df2], axis=1)
     return data_df
+
+def getAnalogData():
+    result = pd.DataFrame()
+    start=pd.DataFrame()
+    end = pd.DataFrame()
+    bpm1 = pd.DataFrame()
+    bpm2 = pd.DataFrame()
+    path=r"D:\data\analog"
+    for i in range(1,1000):
+        data=pd.read_table(path+r"\\"+"track.obs0001.p"+str(i).zfill(4)+"dat",skiprows=8,sep="\s+",header=None,usecols=[2,4])
+        start=start.append(data.loc[0])
+        end=end.append(data.loc[1])
+        data = pd.read_table(path + r"\\" + "track.obs0002.p"+str(i).zfill(4)+"dat", skiprows=8, sep="\s+", header=None, usecols=[2, 4])
+        bpm1 = start.append(data.loc[0])
+        data = pd.read_table(path + r"\\" + "track.obs0003.p" + str(i).zfill(4) + "dat", skiprows=8, sep="\s+", header=None,usecols=[2, 4])
+        bpm2 = start.append(data.loc[0])
+    start_names=['X_start','Y_start']
+    start.columns=start_names
+    start.reset_index(drop=True,inplace=True)
+    end_names=['X_end','Y_end']
+    end.columns=end_names
+    end.reset_index(drop=True,inplace=True)
+    bpm1_names = ['X_bpm1', 'Y_bpm1']
+    bpm1.columns = bpm1_names
+    bpm1.reset_index(drop=True, inplace=True)
+    bpm2_names = ['X_bpm2', 'Y_bpm2']
+    bpm2.columns = bpm2_names
+    bpm2.reset_index(drop=True, inplace=True)
+    result=start.join(end).join(bpm1).join(bpm2)
+    return result

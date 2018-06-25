@@ -1,4 +1,5 @@
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
@@ -25,7 +26,7 @@ def split_data(data,t_pvname):
     y = data[t_pvname]
     X = data.drop(t_pvname, axis=1)
     print("数据共有{}条，每条含有{}个特征.".format(*X.shape))
-    X_train, X_test, y_train, y_test = train_test_split(X, y,test_size = 0.2, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y,test_size = 0.25, random_state=1)
     print("训练集与测试集拆分成功，训练集有{}条，测试集有{}条。".format(X_train.shape[0], X_test.shape[0]))
     return X_train, X_test, y_train, y_test
 
@@ -33,15 +34,36 @@ def split_data(data,t_pvname):
 def MLLinearRegression(X_train, X_test, y_train, y_test):
     linreg = LinearRegression()
     linreg.fit(X_train, y_train)
-    print(linreg.intercept_)
-    print(linreg.coef_)
+    print("intercept:",linreg.intercept_)
+    print("coef:",linreg.coef_)
     y_pred = linreg.predict(X_test)
-    for i, prediction in enumerate(y_pred):
-        print('Predicted: %s, Target: %s' % (prediction, y_test[i]))
+    #score方法可以计算R2
+    score=linreg.score(X_test,y_test)
+    print("......Results of the Linear Regression......")
+    print("score:", score)
     print("MSE:", mean_squared_error(y_test, y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
 
 
+    #plot
+    # plt.figure()
+    # plt.plot(np.arange(len(y_pred)), y_test, 'go-', label='true value')
+    # plt.plot(np.arange(len(y_pred)), y_pred, 'ro-', label='predict value')
+    # plt.title('score: %f' % score)
+    # plt.legend()
+    # plt.show()
+#
+def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
+    quadratic_featurizer = PolynomialFeatures(degree=degree)
+    X_train_quadratic = quadratic_featurizer.fit_transform(X_train)
+    X_test_quadratic = quadratic_featurizer.transform(X_test)
+    regressor_quadratic = LinearRegression()
+    regressor_quadratic.fit(X_train_quadratic, y_train)
+    reg_y_pred=regressor_quadratic.predict(X_test_quadratic)
+    print("......Results of the Polynomial Regression......")
+    print('score:', regressor_quadratic.score(X_test_quadratic, y_test))
+    print("MSE:", mean_squared_error(y_test, reg_y_pred))
+    print("RMSE:", np.sqrt(mean_squared_error(y_test, reg_y_pred)))
 #regression score functions: r2, absolute_error, quare_error, explained_viarance_score
 # now use r2
 #sklearn.metric提供了一些函数，用来计算真实值与预测值之间的预测误差：
@@ -102,7 +124,6 @@ def MLKNN(X_train, X_test, y_train, y_test):
     reg_k = fit_model_k_fold(X_train, y_train)
     reg_s=fit_model_shuffle(X_train,y_train)
     print("Parameter 'n_neighbors' is {} for the optimal model.".format(reg_k.get_params()['n_neighbors']))
-    print("Parameter 'n_neighbors' is {} for the optimal model.".format(reg_s.get_params()['n_neighbors']))
     # for i, target in enumerate(reg.predict(features)):
     #     print(target)
     print('k-fold:',performance_metric_r2(y_test, reg_k.predict(X_test)))
