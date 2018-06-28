@@ -1,25 +1,26 @@
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import explained_variance_score
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import make_scorer
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import KFold
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.cluster import DBSCAN
+
 from sklearn import metrics
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import explained_variance_score
+from sklearn.metrics import make_scorer
 from sklearn import datasets
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.cluster import KMeans
-from sklearn.datasets.samples_generator import make_blobs
-from sklearn.preprocessing import StandardScaler
+
 
 #split data set
 def split_data(data,t_pvname):
@@ -43,8 +44,6 @@ def MLLinearRegression(X_train, X_test, y_train, y_test):
     print("score:", score)
     print("MSE:", mean_squared_error(y_test, y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
-
-
     #plot
     # plt.figure()
     # plt.plot(np.arange(len(y_pred)), y_test, 'go-', label='true value')
@@ -52,7 +51,11 @@ def MLLinearRegression(X_train, X_test, y_train, y_test):
     # plt.title('score: %f' % score)
     # plt.legend()
     # plt.show()
-#
+
+# DecisionTreeRegressor
+
+
+#PolynomialRegression
 def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
     quadratic_featurizer = PolynomialFeatures(degree=degree)
     X_train_quadratic = quadratic_featurizer.fit_transform(X_train)
@@ -158,8 +161,10 @@ def test_LogisticRegression_C(X_train, X_test, y_train, y_test,a=-2,b=4,n=100):
     print("When C=%s, the highest score=%s"%(Cs[max_index],max_score))
     return Cs[max_index],max_score
 
-def MLDBSCAN(X,labels_true,eps=0.5,min_samples=10):
+def MLDBSCAN(data,target_pv,eps=0.5,min_samples=10):
+    X=data.drop(target_pv, axis=1)
     X = StandardScaler().fit_transform(X)
+    labels_true=data[target_pv]
     # print(X)
     #print(labels_true)
     # Compute DBSCAN
@@ -203,35 +208,18 @@ def MLDBSCAN(X,labels_true,eps=0.5,min_samples=10):
     plt.title('Estimated number of clusters: %d' % n_clusters_)
     plt.show()
 
-def MLKMeans(cluster=3):
-    iris=datasets.load_iris()
-    X = iris.data[:, 0:2]  ##表示我们只取特征空间中的后两个维度
-    estimator = KMeans(n_clusters=cluster)  # 构造聚类器
+def MLKMeans(data,feature_pv1,feature_pv2,cluster=2):
+    X=data[[feature_pv1,feature_pv2]]
+    estimator = KMeans(n_clusters=cluster)
     estimator.fit(X)  # 聚类
     label_pred = estimator.labels_  # 获取聚类标签
-    # 绘制k-means结果
-    x0 = X[label_pred == 0]
-    x1 = X[label_pred == 1]
-    x2 = X[label_pred == 2]
-    plt.scatter(x0[:, 0], x0[:, 1], c="red", marker='o', label='label0')
-    plt.scatter(x1[:, 0], x1[:, 1], c="green", marker='*', label='label1')
-    plt.scatter(x2[:, 0], x2[:, 1], c="blue", marker='+', label='label2')
-    plt.xlabel('petal length')
-    plt.ylabel('petal width')
-    plt.legend(loc=2)
+    for i in range(0,cluster):
+        colors = np.random.rand(3)
+        print(colors)
+        xi= X[label_pred == i]
+        plt.scatter(xi[feature_pv1], xi[feature_pv2], c=colors, marker='o', label='label'+str(i))
+    plt.xlabel(feature_pv1)
+    plt.ylabel(feature_pv2)
+    plt.legend()
     plt.show()
 
-def test3d():
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    x = np.arange(-5, 5, 0.25)
-    y = np.arange(-5, 5, 0.25)
-    x, y = np.meshgrid(x, y)
-    r = np.sqrt(x ** 2 + y ** 2)
-    z = np.sin(r)
-    # 高度
-    ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=plt.get_cmap('rainbow'))
-    # 填充rainbow颜色
-    ax.contourf(x, y, z, zdir='z', offset=-2, cmap='rainbow')
-    # 绘制3D图形,zdir表示从哪个坐标轴上压下去
-    plt.show()

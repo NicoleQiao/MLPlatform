@@ -79,15 +79,38 @@ TrainData.MLLogisticRegression(X_train,X_test,y_train,y_test)
 TrainData.test_LogisticRegression_C(X_train,X_test,y_train,y_test)
 '''
 
-#test DBSCAN
-# iris = datasets.load_iris()
-# X=iris.data
-# labels_true=iris.target
-# TrainData.MLDBSCAN(X,labels_true)
+# test DBSCAN
+'''
+iris = datasets.load_iris()
+data=LoadData.np2df(iris)
+target_pv="target"
+TrainData.MLDBSCAN(data,target_pv)
+'''
+#test MLKMeans 2 features better for plot result
+'''
+iris = datasets.load_iris()
+data=LoadData.np2df(iris)
+feature_pv1='sepal length (cm)'
+feature_pv2="sepal width (cm)"
+print(data.columns.tolist())
+TrainData.MLKMeans(data,feature_pv1,feature_pv2)
+'''
 
-#TrainData.MLKMeans()
+#test anolog data
+'''
 data=LoadData.getAnalogData()
 data_X=data[['X_end','X_bpm1','X_bpm2']]
 X_train, X_test, y_train, y_test=TrainData.split_data(data_X,"X_end")
-
-
+TrainData.MLLinearRegression(X_train, X_test, y_train, y_test)
+'''
+# data=LoadData.getAnalogData()
+# data=CleanData.NormData(data,norm_type='min-max')
+# print(data.head())
+# data_X=data[['X_end','X_bpm1','X_bpm2']]
+# print(data_X.head())
+# X_train, X_test, y_train, y_test=TrainData.split_data(data_X,"X_end")
+# TrainData.MLLinearRegression(X_train, X_test, y_train, y_test)
+# data_X1=data[['X_end','X_bpm1']]
+# print(data_X1.head())
+# X_train1, X_test1, y_train1, y_test1=TrainData.split_data(data_X1,"X_end")
+# TrainData.MLLinearRegression(X_train1, X_test1, y_train1, y_test1)
