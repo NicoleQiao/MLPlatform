@@ -9,6 +9,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
+from sklearn.naive_bayes import GaussianNB
+from sklearn import tree
+
 from sklearn.model_selection import KFold
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -52,8 +55,58 @@ def MLLinearRegression(X_train, X_test, y_train, y_test):
     # plt.legend()
     # plt.show()
 
-# DecisionTreeRegressor
+#
+def MLGaussianNB_testmodel(X_train, X_test, y_train, y_test):
+    gnb = GaussianNB()
+    gnb.fit(X_train,y_train)
+    y_pred = gnb.predict(X_test)
+    print("ori data:",y_test.values)
+    print("......Results of the GaussianNB......")
+   # print("prediction probability:",gnb.predict_proba(X_test))
+    print("prediction:",y_pred)
+    list=(y_test != y_pred)
+    n=np.sum(list)
+    p=n/len(y_test)
+    print("wrong prediction number:",n)
+    print("wrong prediction precent:", p)
+    print("Residual sum of squares: %.2f" % np.mean((gnb.predict(X_test) - y_test) ** 2))
+    print('Score: %.2f' % gnb.score(X_test, y_test))
+#target_pv 离散变量,predict_data numpy list
+def MLGaussianNB(data,target_pv,predict_data):
+    X=data.drop(target_pv,axis=1)
+    y=data[target_pv]
+    gnb = GaussianNB()
+    gnb.fit(X,y)
+    y_pred = gnb.predict(predict_data)
+    print("......Results of the GaussianNB......")
+    print("prediction:",y_pred)
+    print("prediction probability:", gnb.predict_proba(predict_data))
+#Decision Trees
+def MLDesionTrees_testmodel(X_train, X_test, y_train, y_test):
+    clf = tree.DecisionTreeClassifier()
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    print("ori data:", y_test.values)
+    print("......Results of the DesionTrees......")
+    print("prediction:", y_pred)
+    print("prediction probability:", clf.predict_proba(X_test))
+    list = (y_test != y_pred)
+    n = np.sum(list)
+    p = n / len(y_test)
+    print("wrong prediction number:", n)
+    print("wrong prediction precent:", p)
+    print("Residual sum of squares: %.2f" % np.mean((clf.predict(X_test) - y_test) ** 2))
+    print('Score: %.2f' % clf.score(X_test, y_test))
 
+def MLDecisionTrees(data,target_pv,predict_data):
+    X=data.drop(target_pv,axis=1)
+    y=data[target_pv]
+    clf = tree.DecisionTreeClassifier()
+    clf.fit(X,y)
+    y_pred = clf.predict(predict_data)
+    print("......Results of the DecisionTrees......")
+    print("prediction:",y_pred)
+    print("prediction probability:", clf.predict_proba(predict_data))
 
 #PolynomialRegression
 def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
@@ -64,9 +117,15 @@ def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
     regressor_quadratic.fit(X_train_quadratic, y_train)
     reg_y_pred=regressor_quadratic.predict(X_test_quadratic)
     print("......Results of the Polynomial Regression......")
+    print('degree:', degree)
     print('score:', regressor_quadratic.score(X_test_quadratic, y_test))
     print("MSE:", mean_squared_error(y_test, reg_y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, reg_y_pred)))
+
+
+
+
+
 #regression score functions: r2, absolute_error, quare_error, explained_viarance_score
 # now use r2
 #sklearn.metric提供了一些函数，用来计算真实值与预测值之间的预测误差：
@@ -133,15 +192,34 @@ def MLKNN(X_train, X_test, y_train, y_test):
     print('shuffle:',performance_metric_r2(y_test, reg_s.predict(X_test)))
     return 1
 
-def MLLogisticRegression(X_train, X_test, y_train, y_test,multinominal=False,c=1.0):
+def MLLogisticRegression_testmodel(X_train, X_test, y_train, y_test,multinominal=False,c=1.0):
     if multinominal==True:
         cls = LogisticRegression(multi_class='multinomial',solver='lbfgs',C=c)
     else:
         cls = LogisticRegression(C=c)
     cls.fit(X_train, y_train)
+    y_pred=cls.predict(X_test)
+    print("......Results of the LogisticRegression......")
+    print("ori:", y_test.values)
+    print("prediction:", y_pred)
+    list = (y_test != y_pred)
+    n = np.sum(list)
+    p = n / len(y_test)
+    print("wrong prediction number:", n)
+    print("wrong prediction precent:", p)
     print("Coefficients:%s, intercept %s"%(cls.coef_,cls.intercept_))
     print("Residual sum of squares: %.2f"% np.mean((cls.predict(X_test) - y_test) ** 2))
     print('Score: %.2f' % cls.score(X_test, y_test))
+
+def MLLogisticRegression(X,y,predict_data,multinominal=False,c=1.0):
+    if multinominal==True:
+        cls = LogisticRegression(multi_class='multinomial',solver='lbfgs',C=c)
+    else:
+        cls = LogisticRegression(C=c)
+    cls.fit(X, y)
+    print("......Results of the LogisticRegression......")
+    print("prediction:",cls.predict(predict_data))
+    print("prediction probability:", cls.predict_proba(predict_data))
 
 #C:Inverse of regularization strength; must be a positive float. Like in support vector machines, smaller values specify stronger regularization.
 #find the highest predicting score by adjusting the C parameter
@@ -175,7 +253,7 @@ def MLDBSCAN(data,target_pv,eps=0.5,min_samples=10):
 
     # Number of clusters in labels, ignoring noise if present.
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-
+    print("......Results of the DBSCAN......")
     print('Estimated number of clusters: %d' % n_clusters_)
     print("Homogeneity: %0.3f" % metrics.homogeneity_score(labels_true, labels))
     print("Completeness: %0.3f" % metrics.completeness_score(labels_true, labels))
