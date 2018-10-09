@@ -18,6 +18,7 @@ def NormData(data,norm_type,ddof=0):
 #enumnames:array or boolean, default None. Used as labels for the resulting bins. Must be of the same length as the resulting bins. If False, return only integer indicators of the bins.
 def EnumData(data,pvname,cut_ranges, right=True,enumnames=None):
     EnumPV = pd.cut(data[pvname], cut_ranges,right=right,labels=enumnames)
+    print(EnumPV)
     data[pvname]=EnumPV
     return data
 

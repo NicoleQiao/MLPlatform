@@ -23,14 +23,14 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import explained_variance_score
 from sklearn.metrics import make_scorer
 from sklearn import datasets
-
+from sklearn.neural_network import MLPClassifier
 
 #split data set
-def split_data(data,t_pvname):
+def split_data(data,t_pvname,test_size = 0.3):
     y = data[t_pvname]
     X = data.drop(t_pvname, axis=1)
     print("数据共有{}条，每条含有{}个特征.".format(*X.shape))
-    X_train, X_test, y_train, y_test = train_test_split(X, y,test_size = 0.25, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y,test_size = test_size, random_state=42)
     print("训练集与测试集拆分成功，训练集有{}条，测试集有{}条。".format(X_train.shape[0], X_test.shape[0]))
     return X_train, X_test, y_train, y_test
 
@@ -125,59 +125,6 @@ def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
 
 
 
-
-#regression score functions: r2, absolute_error, quare_error, explained_viarance_score
-# now use r2
-#sklearn.metric提供了一些函数，用来计算真实值与预测值之间的预测误差：
-#以_score结尾的函数，返回一个最大值，越高越好
-#以_error结尾的函数，返回一个最小值，越小越好；如果使用make_scorer来创建scorer时，将greater_is_better设为False
-def performance_metric_r2(y_true, y_predict):
-    score = r2_score(y_true, y_predict)
-    return score
-
-def performance_metric_abstErr(y_true, y_predict):
-    score = mean_absolute_error(y_true, y_predict)
-    return score
-
-def performance_metric_sqrErr(y_true, y_predict):
-    score = mean_squared_error(y_true, y_predict)
-    return score
-
-def performance_metric_expVia(y_true, y_predict):
-    score = explained_variance_score(y_true, y_predict)
-    return score
-
-def fit_model_k_fold(X, y):
-    k_fold = KFold(n_splits=10)
-    # Create a decision tree regressor object
-    regressor = KNeighborsRegressor()
-    # Create a dictionary for the parameter 'max_depth' with a range from 1 to 10
-    params = {'n_neighbors': range(3, 10)}
-    # Transform 'performance_metric' into a scoring function using 'make_scorer'
-    scoring_fnc = make_scorer(performance_metric_r2)
-    # Create the grid search object
-    grid = GridSearchCV(regressor, param_grid=params, scoring=scoring_fnc, cv=k_fold)
-    # Fit the grid search object to the data to compute the optimal model
-    grid = grid.fit(X, y)
-    # Return the optimal model after fitting the data
-    return grid.best_estimator_
-
-
-def fit_model_shuffle(X, y):
-    # Create cross-validation sets from the training data
-    cv_sets = ShuffleSplit(n_splits=10, test_size=0.20, random_state=0)
-    # Create a KNN regressor object
-    regressor = KNeighborsRegressor()
-    # Create a dictionary for the parameter 'n_neighbors' with a range from 3 to 10
-    params = {'n_neighbors': range(3, 10)}
-    # Transform 'performance_metric' into a scoring function using 'make_scorer'
-    scoring_fnc = make_scorer(performance_metric_r2)
-    # Create the grid search object
-    grid = GridSearchCV(regressor, param_grid=params, scoring=scoring_fnc, cv=cv_sets)
-    # Fit the grid search object to the data to compute the optimal model
-    grid = grid.fit(X, y)
-    # Return the optimal model after fitting the data
-    return grid.best_estimator_
 
 #KNN for non-linear regression
 #data: all dataset
@@ -301,3 +248,69 @@ def MLKMeans(data,feature_pv1,feature_pv2,cluster=2):
     plt.legend()
     plt.show()
 
+def MLMLPClassifier(X_train, X_test, y_train, y_test):
+    model = MLPClassifier(activation='relu', solver='adam', alpha=0.0001, max_iter=10000)  # 神经网络
+    model.fit(X_train, y_train)
+    predict = model.predict(X_test)
+    print(predict)
+    print(y_test.values)
+    print('神经网络分类:{:.3f}'.format(model.score(X_test, y_test)))
+    plt.plot(predict,'bo-',markersize=5)
+    plt.plot(y_test.values,'gv-',markersize=5)
+    plt.show()
+
+
+
+
+#regression score functions: r2, absolute_error, quare_error, explained_viarance_score
+# now use r2
+#sklearn.metric提供了一些函数，用来计算真实值与预测值之间的预测误差：
+#以_score结尾的函数，返回一个最大值，越高越好
+#以_error结尾的函数，返回一个最小值，越小越好；如果使用make_scorer来创建scorer时，将greater_is_better设为False
+def performance_metric_r2(y_true, y_predict):
+    score = r2_score(y_true, y_predict)
+    return score
+
+def performance_metric_abstErr(y_true, y_predict):
+    score = mean_absolute_error(y_true, y_predict)
+    return score
+
+def performance_metric_sqrErr(y_true, y_predict):
+    score = mean_squared_error(y_true, y_predict)
+    return score
+
+def performance_metric_expVia(y_true, y_predict):
+    score = explained_variance_score(y_true, y_predict)
+    return score
+
+def fit_model_k_fold(X, y):
+    k_fold = KFold(n_splits=10)
+    # Create a decision tree regressor object
+    regressor = KNeighborsRegressor()
+    # Create a dictionary for the parameter 'max_depth' with a range from 1 to 10
+    params = {'n_neighbors': range(3, 10)}
+    # Transform 'performance_metric' into a scoring function using 'make_scorer'
+    scoring_fnc = make_scorer(performance_metric_r2)
+    # Create the grid search object
+    grid = GridSearchCV(regressor, param_grid=params, scoring=scoring_fnc, cv=k_fold)
+    # Fit the grid search object to the data to compute the optimal model
+    grid = grid.fit(X, y)
+    # Return the optimal model after fitting the data
+    return grid.best_estimator_
+
+
+def fit_model_shuffle(X, y):
+    # Create cross-validation sets from the training data
+    cv_sets = ShuffleSplit(n_splits=10, test_size=0.20, random_state=0)
+    # Create a KNN regressor object
+    regressor = KNeighborsRegressor()
+    # Create a dictionary for the parameter 'n_neighbors' with a range from 3 to 10
+    params = {'n_neighbors': range(3, 10)}
+    # Transform 'performance_metric' into a scoring function using 'make_scorer'
+    scoring_fnc = make_scorer(performance_metric_r2)
+    # Create the grid search object
+    grid = GridSearchCV(regressor, param_grid=params, scoring=scoring_fnc, cv=cv_sets)
+    # Fit the grid search object to the data to compute the optimal model
+    grid = grid.fit(X, y)
+    # Return the optimal model after fitting the data
+    return grid.best_estimator_

@@ -10,20 +10,20 @@ def showSubPlot(data):
     data.plot(subplots=True, figsize=(8, 8))
     plt.show()
 
-def showHist(data):
-    data.hist()
+def showHist(data,column=None):
+    data.hist(column)
     plt.show()
 # For numeric data, the result's index will include count, mean, std, min, max as well as lower, 50 and upper percentiles. By default the lower percentile is 25 and the upper percentile is 75. The 50 percentile is the same as the median.
 # For object data (e.g. strings or timestamps), the result's index will include count, unique, top, and freq. The top is the most common value. The freq is the most common value's frequency. Timestamps also include the first and last items.
 def showStatistic(data):
-    return data.describe()
+    print(data.describe())
 #Compute pairwise correlation of columns, excluding NA/null values
 #method :
 #pearson : standard correlation coefficient
 #kendall : Kendall Tau correlation coefficient
 #spearman : Spearman rank correlation
 def showCorr(data,method='pearson'):
-    return data.corr(method=method)
+    print(data.corr(method=method))
 def showCorrMap(data,method='pearson'):
     names=data.columns.values.tolist()
     length=len(names)
@@ -39,15 +39,21 @@ def showCorrMap(data,method='pearson'):
     ax.set_xticklabels(names)  # 生成x轴标签
     ax.set_yticklabels(names)
     plt.show()
-def showSPLOM(data):
-    sns.pairplot(data)
+def showSPLOM(data,hue=None, hue_order=None, palette=None, vars=None, x_vars=None, y_vars=None, kind='scatter', diag_kind='hist', markers=None, size=2.5, aspect=1, dropna=True, plot_kws=None, diag_kws=None, grid_kws=None):
+    sns.pairplot(data,hue=None, hue_order=hue_order, palette=palette, vars=vars, x_vars=x_vars, y_vars=y_vars, kind=kind, diag_kind=diag_kind, markers=markers, size=size, aspect=aspect, dropna=dropna, plot_kws=plot_kws, diag_kws=diag_kws, grid_kws=grid_kws)
     plt.show()
 
-def showSPLOM_G(data):
+def showSPLOM_G(data,hue=None, hue_order=None, palette=None,
+                 hue_kws=None, vars=None, x_vars=None, y_vars=None,
+                 diag_sharey=True, size=2.5, aspect=1,
+                 despine=True, dropna=True):
     sns.set(color_codes=True)
-    g = sns.PairGrid(data)
+    g = sns.PairGrid(data,hue=None, hue_order=hue_order, palette=palette,
+                 hue_kws=hue_kws, vars=vars, x_vars=x_vars, y_vars=y_vars,
+                 diag_sharey=diag_sharey, size=size, aspect=aspect,
+                 despine=aspect, dropna=aspect)
     g.map_diag(sns.kdeplot)
-    g.map_offdiag(sns.kdeplot, cmap="Blues_d", n_levels=6)
+    g.map_offdiag(sns.kdeplot)
     plt.show()
 #Normalized by N-1 by default
 def showStd(data,ddof=1):
@@ -66,4 +72,5 @@ def showBins(data):
         else:
             plt.annotate(y[i], xy=(x[i], y[i]), xytext=(x[i] + 0.08, y[i]))
     plt.show()
+
 

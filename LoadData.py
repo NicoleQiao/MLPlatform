@@ -48,12 +48,11 @@ def getChanArchAllEngineKey(ipaddr,enginename):
     for e in engine:
         if e.get('name')==enginename:
             return e.get('key')
-    return 0
+
 
 
 #from format datetime to unix time
-def datetime2utc(datestr):
-    dtformat = '%m/%d/%Y %H:%M:%S'
+def datetime2utc(datestr,dtformat='%m/%d/%Y %H:%M:%S'):
     timestamp = time.mktime(datetime.datetime.strptime(datestr, dtformat).timetuple())
     return timestamp
 
@@ -84,20 +83,33 @@ def getKey(ipaddr,pvnames):
     sp = '%s%s%s' % ('http://', ipaddr, '/cgi-bin/archiver/ArchiveDataServer.cgi')
     server = xmlrpc.client.ServerProxy(sp)
     engine = server.archiver.archives()
-    #print(engine)
+    namelist=[]
     for e in engine:
-        namelist=server.archiver.names(e['key'],'')
+        try:
+            namelist=server.archiver.names(e['key'],'')
+        except xmlrpc.client.Fault or xmlrpc.client.ProtocolError as err:
+            print("A fault occurred")
+            print("Fault string: %s" % err.faultString)
         name = {}
         for nl in namelist:
             name[nl['name']]=e['key']
         keypvlist[e['name']]=name
     for pv in pvnames:
+        flag = 0
         for key,value in keypvlist.items():
             if pv in value:
+                flag=1
                 print(pv,":engine name is: ",key,",engine key is:",value.get(pv))
+        if flag==0:
+            print(pv," not found.")
 
 
-
+def compare_time(time1,time2):
+    s_time = time.mktime(time.strptime(time1,'%m/%d/%Y %H:%M:%S'))
+    e_time = time.mktime(time.strptime(time2,'%m/%d/%Y %H:%M:%S'))
+    print (s_time ,'is:',s_time)
+    print (e_time ,'is:',e_time)
+    return int(s_time) - int(e_time)
 
 #get history data from Channel Archiver
 #return format dataFrame
@@ -134,20 +146,34 @@ def getFormatChanArch(ipaddr, key, pvnames, start, end, merge_type,interpolate_t
         merge_type = 'left'
         df = pd.DataFrame(timeSeries, columns=['time'])
     datalist = server.archiver.values(key, pvnames, int(datetime2utc(start)), 0, int(datetime2utc(end)), 0, count, how)
+    print(merge_type)
     for l in datalist:
         timelist = []
         valuelist = []
-        for d in l.get('values')[1:]:
+        if len(l.get('values'))==1:
+            gettimestr=str(pd.to_datetime(l.get('values')[0].get('secs'),unit='s')+datetime.timedelta(hours=8))
+            gettime= time.mktime(time.strptime(gettimestr, '%Y-%m-%d %H:%M:%S'))
+            print(gettime)
+            starttime=time.mktime(time.strptime(start, '%m/%d/%Y %H:%M:%S'))
+            endtime=time.mktime(time.strptime(end, '%m/%d/%Y %H:%M:%S'))
+            if starttime>gettime or endtime<gettime:
+                timelist= list(pd.date_range(start=start, end=end, freq="1" + 'S'))
+                for i in range(len(timelist)):
+                    valuelist.append(l.get('values')[0].get('value')[0])
+        for d in l.get('values'):
             timelist.append(pd.to_datetime(d.get('secs'),unit='s')+datetime.timedelta(hours=8))
             valuelist.append(d.get('value')[0])
+
         if df.empty:
             df=pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first')
         else:
             df=pd.merge(df,pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first'),how=merge_type)
+
     if(fillna_type!=None):
         df=df.set_index(['time']).sort_index(ascending=True).fillna(method=fillna_type)
     else:
         df=df.set_index(['time']).sort_index(ascending=True).interpolate(method=interpolate_type)
+
     if dropna==True:
         return df.dropna(axis = 0)
     else:
@@ -176,10 +202,9 @@ def getArchAppl(data_retrieval_url,pvnames,start,end,merge_type):
 def getLocalFile(filepath,filename,skiprows=0):
     filetype=filename.split('.')[1]
     if filetype.lower()=='csv':
-        data = pd.read_csv(filepath+'\\'+filename, encoding='gb2312', skiprows=skiprows).dropna()
+        data = pd.read_csv(filepath+'\\\\'+filename, encoding='gb2312', skiprows=skiprows).dropna()
     else:
-        data = pd.read_table(filepath + '\\' + filename, encoding='gb2312', skiprows=skiprows).dropna()
-    print(data)
+        data = pd.read_table(filepath + '\\\\' + filename, encoding='gb2312', skiprows=skiprows).dropna()
     return data
 # keep left dataFrame data
 #merge_type:outer inner left right
@@ -190,14 +215,41 @@ def getTXTpv(filepath,filename):
     re=pd.read_table(filepath+'\\'+filename,header=None)
     return re[0].values.tolist()
 
-def np2df(dataset):
+def dataset2df(dataset):
     column = dataset.feature_names
     data = dataset.data
     target = dataset.target
     df1 = pd.DataFrame(data, columns=column)
-    df2 = pd.DataFrame(target, columns=['target'])
-    data_df = pd.concat([df1, df2], axis=1)
-    return data_df
+    df1['target'] = target
+    return df1
+def np2df(data,col=""):
+    if isinstance(data,np.ndarray):
+        print("ndarray")
+        if isinstance(col,list) and len(col)== data.shape[1]:
+            df=pd.DataFrame(data,columns=col)
+            return df
+        else:
+            print("wrong column names,need to be list and same length of data feature nums")
+            return
+    elif isinstance(data,list):
+        print("list")
+        if isinstance(col, list) and len(col) ==len(data[0]):
+            df = pd.DataFrame(data, columns=col)
+            return df
+        else:
+            print("wrong column names,need to be list and same length of data feature nums")
+            return
+    elif isinstance(data,dict):
+        print("dict")
+        df=pd.DataFrame(data)
+        return df
+def df2np(data,datatype):
+    if datatype=="list":
+        return data.values.tolist()
+    elif datatype=='nparray':
+        return np.array(data.values.tolist())
+    else:
+        return data.to_dict('dict')
 
 def getAnalogData():
     result = pd.DataFrame()
