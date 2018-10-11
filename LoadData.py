@@ -41,7 +41,7 @@ def generate_live_data(duration, pvnames):
     return df
 
 #using engine name to find key
-def getChanArchAllEngineKey(ipaddr,enginename):
+def getChanArchEngineKey(ipaddr,enginename):
     sp = '%s%s%s' % ('http://', ipaddr, '/cgi-bin/archiver/ArchiveDataServer.cgi')
     server = xmlrpc.client.ServerProxy(sp)
     engine = server.archiver.archives()

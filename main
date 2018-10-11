@@ -49,11 +49,13 @@ data2=LoadData.getFormatChanArch('192.168.44.165',27,['BIBPM:R1OBPM02:STAT'],'05
 data3=LoadData.mergeDF(data2,data1,'outer')
 '''
 #test get channel archiver engine keys
-a=LoadData.getChanArchAllEngineKey('192.168.44.165','BESII:180927-now')
-print(a)
-#LoadData.getKey('192.168.44.165',['BI:BSR:TUNEX'])
 '''
-print(LoadData.getChanArchEngineKey('192.168.44.165','TPS:170323-170728'))
+a=LoadData.getChanArchEngineKey('192.168.44.165','BESII:180927-now')
+print(a)
+'''
+
+'''
+LoadData.getKey('192.168.44.165',['BI:BSR:TUNEX'])
 '''
 #test clean data
 '''
@@ -66,11 +68,11 @@ newdata=data[data['BESIII:LUMAVG']<0.52]
 
 #test LinearRegression
 '''
+
+'''
 data = pd.read_csv('E:\CCPP\ccpp.csv')
 X_train, X_test, y_train, y_test =TrainData.split_data(data,'PE')
 TrainData.MLLinearRegression( X_train, X_test, y_train, y_test)
-'''
-
 
 #test PolynimialRegression
 '''

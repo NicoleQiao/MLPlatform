@@ -24,6 +24,7 @@ from sklearn.metrics import explained_variance_score
 from sklearn.metrics import make_scorer
 from sklearn import datasets
 from sklearn.neural_network import MLPClassifier
+import math
 
 #split data set
 def split_data(data,t_pvname,test_size = 0.3):
@@ -47,14 +48,39 @@ def MLLinearRegression(X_train, X_test, y_train, y_test):
     print("score:", score)
     print("MSE:", mean_squared_error(y_test, y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
-    #plot
-    # plt.figure()
-    # plt.plot(np.arange(len(y_pred)), y_test, 'go-', label='true value')
-    # plt.plot(np.arange(len(y_pred)), y_pred, 'ro-', label='predict value')
-    # plt.title('score: %f' % score)
-    # plt.legend()
-    # plt.show()
-
+    plot_predict(y_test, y_pred,title='score: %f' % score)
+#show test line and predict scatter
+def plot_predict(y_test,y_pred,title='Figure'):
+    plt.figure()
+    plt.plot(np.arange(len(y_pred)), y_test, color='black',
+             label='true value')
+    plt.plot(np.arange(len(y_pred)), y_pred, '.', color='blue',
+             label='predict value')
+    plt.title(title)
+    plt.legend()
+    plt.show()
+#data num more than 1000, show in several sub plots
+def subplot_predict(y_test,y_pred,title='Figure'):
+    num = math.ceil(len(y_pred) / 1000)
+    plt.figure()
+    for n in range(1, int(num) + 1):
+        if n == int(num):
+            plt.subplot(str(num) + '1' + str(n))
+            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_test[1000 * (n - 1):len(y_pred)], color='black',
+                     label='true value')
+            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_pred[1000 * (n - 1):len(y_pred)], '.', color='blue',
+                     label='predict value')
+            plt.title(title)
+            plt.legend()
+        else:
+            plt.subplot(str(num) + '1' + str(n))
+            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_test[1000 * (n - 1):1000 * n], color='black',
+                     label='true value')
+            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_pred[1000 * (n - 1):1000 * n], '.', color='blue',
+                     label='predict value')
+            plt.title(title)
+            plt.legend()
+    plt.show()
 #
 def MLGaussianNB_testmodel(X_train, X_test, y_train, y_test):
     gnb = GaussianNB()
