@@ -24,7 +24,7 @@ from sklearn.metrics import explained_variance_score
 from sklearn.metrics import make_scorer
 from sklearn import datasets
 from sklearn.neural_network import MLPClassifier
-import math
+
 
 #split data set
 def split_data(data,t_pvname,test_size = 0.3):
@@ -48,40 +48,11 @@ def MLLinearRegression(X_train, X_test, y_train, y_test):
     print("score:", score)
     print("MSE:", mean_squared_error(y_test, y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
-    plot_predict(y_test, y_pred,title='score: %f' % score)
-#show test line and predict scatter
-def plot_predict(y_test,y_pred,title='Figure'):
-    plt.figure()
-    plt.plot(np.arange(len(y_pred)), y_test, color='black',
-             label='true value')
-    plt.plot(np.arange(len(y_pred)), y_pred, '.', color='blue',
-             label='predict value')
-    plt.title(title)
-    plt.legend()
-    plt.show()
-#data num more than 1000, show in several sub plots
-def subplot_predict(y_test,y_pred,title='Figure'):
-    num = math.ceil(len(y_pred) / 1000)
-    plt.figure()
-    for n in range(1, int(num) + 1):
-        if n == int(num):
-            plt.subplot(str(num) + '1' + str(n))
-            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_test[1000 * (n - 1):len(y_pred)], color='black',
-                     label='true value')
-            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_pred[1000 * (n - 1):len(y_pred)], '.', color='blue',
-                     label='predict value')
-            plt.title(title)
-            plt.legend()
-        else:
-            plt.subplot(str(num) + '1' + str(n))
-            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_test[1000 * (n - 1):1000 * n], color='black',
-                     label='true value')
-            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_pred[1000 * (n - 1):1000 * n], '.', color='blue',
-                     label='predict value')
-            plt.title(title)
-            plt.legend()
-    plt.show()
-#
+    return y_pred,score
+    #DisplayData.plot_predict(y_test, y_pred,title='score: %f' % score)
+
+
+#GaussianNB
 def MLGaussianNB_testmodel(X_train, X_test, y_train, y_test):
     gnb = GaussianNB()
     gnb.fit(X_train,y_train)
@@ -89,14 +60,17 @@ def MLGaussianNB_testmodel(X_train, X_test, y_train, y_test):
     print("ori data:",y_test.values)
     print("......Results of the GaussianNB......")
    # print("prediction probability:",gnb.predict_proba(X_test))
-    print("prediction:",y_pred)
+   #print("prediction:",y_pred)
     list=(y_test != y_pred)
     n=np.sum(list)
     p=n/len(y_test)
-    print("wrong prediction number:",n)
+    score=gnb.score(X_test, y_test)
     print("wrong prediction precent:", p)
     print("Residual sum of squares: %.2f" % np.mean((gnb.predict(X_test) - y_test) ** 2))
-    print('Score: %.2f' % gnb.score(X_test, y_test))
+    print('Score: %.2f' % score)
+    return y_pred, score
+
+
 #target_pv 离散变量,predict_data numpy list
 def MLGaussianNB(data,target_pv,predict_data):
     X=data.drop(target_pv,axis=1)
@@ -107,23 +81,29 @@ def MLGaussianNB(data,target_pv,predict_data):
     print("......Results of the GaussianNB......")
     print("prediction:",y_pred)
     print("prediction probability:", gnb.predict_proba(predict_data))
+    return y_pred
+
+
 #Decision Trees
-def MLDesionTrees_testmodel(X_train, X_test, y_train, y_test):
+def MLDecisionTrees_testmodel(X_train, X_test, y_train, y_test):
     clf = tree.DecisionTreeClassifier()
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
-    print("ori data:", y_test.values)
+    #print("ori data:", y_test.values)
     print("......Results of the DesionTrees......")
-    print("prediction:", y_pred)
-    print("prediction probability:", clf.predict_proba(X_test))
+    #print("prediction:", y_pred)
+    #print("prediction probability:", clf.predict_proba(X_test))
     list = (y_test != y_pred)
     n = np.sum(list)
     p = n / len(y_test)
-    print("wrong prediction number:", n)
+    score=clf.score(X_test, y_test)
+    #print("wrong prediction number:", n)
     print("wrong prediction precent:", p)
     print("Residual sum of squares: %.2f" % np.mean((clf.predict(X_test) - y_test) ** 2))
-    print('Score: %.2f' % clf.score(X_test, y_test))
+    print('Score: %.2f' % score)
+    return y_pred, score
 
+#target_pv 离散变量,predict_data numpy list
 def MLDecisionTrees(data,target_pv,predict_data):
     X=data.drop(target_pv,axis=1)
     y=data[target_pv]
@@ -133,6 +113,7 @@ def MLDecisionTrees(data,target_pv,predict_data):
     print("......Results of the DecisionTrees......")
     print("prediction:",y_pred)
     print("prediction probability:", clf.predict_proba(predict_data))
+    return y_pred
 
 #PolynomialRegression
 def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
@@ -142,28 +123,34 @@ def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
     regressor_quadratic = LinearRegression()
     regressor_quadratic.fit(X_train_quadratic, y_train)
     reg_y_pred=regressor_quadratic.predict(X_test_quadratic)
-    print("......Results of the Polynomial Regression......")
+    score=regressor_quadratic.score(X_test_quadratic, y_test)
+    print('......Results of the Polynomial Regression......')
     print('degree:', degree)
-    print('score:', regressor_quadratic.score(X_test_quadratic, y_test))
+    print('score:',score)
     print("MSE:", mean_squared_error(y_test, reg_y_pred))
     print("RMSE:", np.sqrt(mean_squared_error(y_test, reg_y_pred)))
-
-
-
+    return reg_y_pred, score
 
 
 #KNN for non-linear regression
-#data: all dataset
-#t_pvname:target PV to pridict
-def MLKNN(X_train, X_test, y_train, y_test):
-    reg_k = fit_model_k_fold(X_train, y_train)
-    reg_s=fit_model_shuffle(X_train,y_train)
-    print("Parameter 'n_neighbors' is {} for the optimal model.".format(reg_k.get_params()['n_neighbors']))
-    # for i, target in enumerate(reg.predict(features)):
-    #     print(target)
-    print('k-fold:',performance_metric_r2(y_test, reg_k.predict(X_test)))
-    print('shuffle:',performance_metric_r2(y_test, reg_s.predict(X_test)))
-    return 1
+def MLKNN(X_train, X_test, y_train, y_test,type='k-fold'):
+    y_pred=[]
+    score:float
+    if type == 'k-fold':
+        reg_k = fit_model_k_fold(X_train, y_train)
+        print("Parameter 'n_neighbors' is {} for the optimal model.".format(reg_k.get_params()['n_neighbors']))
+        y_pred = reg_k.predict(X_test)
+        score =performance_metric_r2(y_test, reg_k.predict(X_test))
+        print('k-fold score:', score)
+    elif type == 'shuffle':
+        reg_s = fit_model_shuffle(X_train, y_train)
+        print("Parameter 'n_neighbors' is {} for the optimal model.".format(reg_s.get_params()['n_neighbors']))
+        y_pred = reg_s.predict(X_test)
+        score = performance_metric_r2(y_test, reg_s.predict(X_test))
+        print('shuffle score:', score)
+    else:
+        print('Type should be k-fold or shuffle.')
+    return y_pred,score
 
 def MLLogisticRegression_testmodel(X_train, X_test, y_train, y_test,multinominal=False,c=1.0):
     if multinominal==True:
@@ -173,16 +160,18 @@ def MLLogisticRegression_testmodel(X_train, X_test, y_train, y_test,multinominal
     cls.fit(X_train, y_train)
     y_pred=cls.predict(X_test)
     print("......Results of the LogisticRegression......")
-    print("ori:", y_test.values)
-    print("prediction:", y_pred)
+    #print("ori:", y_test.values)
+    #print("prediction:", y_pred)
     list = (y_test != y_pred)
     n = np.sum(list)
     p = n / len(y_test)
-    print("wrong prediction number:", n)
-    print("wrong prediction precent:", p)
+    score=cls.score(X_test, y_test)
+    #print("wrong prediction number:", n)
+    #print("wrong prediction precent:", p)
     print("Coefficients:%s, intercept %s"%(cls.coef_,cls.intercept_))
     print("Residual sum of squares: %.2f"% np.mean((cls.predict(X_test) - y_test) ** 2))
-    print('Score: %.2f' % cls.score(X_test, y_test))
+    print('Score: %.2f' % score)
+    return y_pred,score
 
 def MLLogisticRegression(X,y,predict_data,multinominal=False,c=1.0):
     if multinominal==True:
@@ -212,6 +201,8 @@ def test_LogisticRegression_C(X_train, X_test, y_train, y_test,a=-2,b=4,n=100):
     print("When C=%s, the highest score=%s"%(Cs[max_index],max_score))
     return Cs[max_index],max_score
 
+
+##cluster dbscan
 def MLDBSCAN(data,target_pv,eps=0.5,min_samples=10):
     X=data.drop(target_pv, axis=1)
     X = StandardScaler().fit_transform(X)
@@ -278,12 +269,12 @@ def MLMLPClassifier(X_train, X_test, y_train, y_test):
     model = MLPClassifier(activation='relu', solver='adam', alpha=0.0001, max_iter=10000)  # 神经网络
     model.fit(X_train, y_train)
     predict = model.predict(X_test)
-    print(predict)
-    print(y_test.values)
-    print('神经网络分类:{:.3f}'.format(model.score(X_test, y_test)))
-    plt.plot(predict,'bo-',markersize=5)
-    plt.plot(y_test.values,'gv-',markersize=5)
-    plt.show()
+    #print(predict)
+    #print(y_test.values)
+    score=model.score(X_test, y_test)
+    print('scikitlearn MLPClassifier score:%.5f'% score)
+    return predict, score
+
 
 
 

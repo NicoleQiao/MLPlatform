@@ -1,7 +1,7 @@
-import numpy
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import math
 def showPlot(data):
     data.plot()
     plt.show()
@@ -73,4 +73,35 @@ def showBins(data):
             plt.annotate(y[i], xy=(x[i], y[i]), xytext=(x[i] + 0.08, y[i]))
     plt.show()
 
-
+#show test line and predict scatter
+def plot_predict(y_test,y_pred,title='Figure'):
+    plt.figure()
+    plt.plot(np.arange(len(y_pred)), y_test, color='black',
+             label='true value')
+    plt.plot(np.arange(len(y_pred)), y_pred, '.', color='blue',
+             label='predict value')
+    plt.title(title)
+    plt.legend()
+    plt.show()
+#data num more than 1000, show in several sub plots
+def subplot_predict(y_test,y_pred,title='Figure'):
+    num = math.ceil(len(y_pred) / 1000)
+    plt.figure()
+    for n in range(1, int(num) + 1):
+        if n == int(num):
+            plt.subplot(str(num) + '1' + str(n))
+            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_test[1000 * (n - 1):len(y_pred)], color='black',
+                     label='true value')
+            plt.plot(np.arange(1000 * (n - 1), len(y_pred)), y_pred[1000 * (n - 1):len(y_pred)], '.', color='blue',
+                     label='predict value')
+            plt.title(title)
+            plt.legend()
+        else:
+            plt.subplot(str(num) + '1' + str(n))
+            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_test[1000 * (n - 1):1000 * n], color='black',
+                     label='true value')
+            plt.plot(np.arange(1000 * (n - 1), 1000 * n), y_pred[1000 * (n - 1):1000 * n], '.', color='blue',
+                     label='predict value')
+            plt.title(title)
+            plt.legend()
+    plt.show()

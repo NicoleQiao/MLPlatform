@@ -241,8 +241,10 @@ def np2df(data,col=""):
             return
     elif isinstance(data,dict):
         print("dict")
+        print(data)
         df=pd.DataFrame(data)
         return df
+
 def df2np(data,datatype):
     if datatype=="list":
         return data.values.tolist()
