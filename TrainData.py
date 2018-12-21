@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor,KNeighborsClassifier
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
@@ -85,8 +86,8 @@ def MLGaussianNB(data,target_pv,predict_data):
 
 
 #Decision Trees
-def MLDecisionTrees_testmodel(X_train, X_test, y_train, y_test):
-    clf = tree.DecisionTreeClassifier()
+def MLDecisionTrees_testmodel(X_train, X_test, y_train, y_test,max_depth):
+    clf = tree.DecisionTreeClassifier(max_depth=max_depth)
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
     #print("ori data:", y_test.values)
@@ -133,7 +134,7 @@ def MLPolynomialRegression(X_train, X_test, y_train, y_test,degree=2):
 
 
 #KNN for non-linear regression
-def MLKNN(X_train, X_test, y_train, y_test,type='k-fold'):
+def MLKNN_Regression(X_train, X_test, y_train, y_test,type='k-fold'):
     y_pred=[]
     score:float
     if type == 'k-fold':
@@ -151,6 +152,17 @@ def MLKNN(X_train, X_test, y_train, y_test,type='k-fold'):
     else:
         print('Type should be k-fold or shuffle.')
     return y_pred,score
+#weights:distance, uniform
+def MLKNN_Classification(X_train, X_test, y_train, y_test,k=5,weights='uniform'):
+    model = KNeighborsClassifier(n_neighbors=k,weights='uniform')
+    model.fit(X_train, y_train)
+    predict = model.predict(X_test)
+    # precision = metrics.precision_score(y_test, predict)
+    # recall = metrics.recall_score(y_test, predict)
+    # print('precision: %.2f%%, recall: %.2f%%' % (100 * precision, 100 * recall))
+    score = metrics.accuracy_score(y_test, predict)
+    print( 'accuracy: %.2f%%' % (100 * score))
+    return predict,score
 
 def MLLogisticRegression_testmodel(X_train, X_test, y_train, y_test,multinominal=False,c=1.0):
     if multinominal==True:
@@ -265,8 +277,8 @@ def MLKMeans(data,feature_pv1,feature_pv2,cluster=2):
     plt.legend()
     plt.show()
 
-def MLMLPClassifier(X_train, X_test, y_train, y_test):
-    model = MLPClassifier(activation='relu', solver='adam', alpha=0.0001, max_iter=10000)  # 神经网络
+def MLMLPClassifier(X_train, X_test, y_train, y_test,activation='relu', solver='adam', alpha=0.0001, max_iter=10000):
+    model = MLPClassifier(activation=activation, solver=solver, alpha=alpha, max_iter=max_iter)  # 神经网络
     model.fit(X_train, y_train)
     predict = model.predict(X_test)
     #print(predict)

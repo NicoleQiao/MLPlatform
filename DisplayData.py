@@ -1,5 +1,6 @@
 import numpy as np
 import seaborn as sns
+
 import matplotlib.pyplot as plt
 import math
 def showPlot(data):
@@ -33,10 +34,10 @@ def showCorrMap(data,method='pearson'):
     ax = fig.add_subplot(111)
     cax = ax.matshow(correlations, vmin=-1, vmax=1)  # 绘制热力图，从-1到1
     fig.colorbar(cax)  # 将matshow生成热力图设置为颜色渐变条
-    ticks = numpy.arange(0, length, 1)  # 生成0-9，步长为1
+    ticks = np.arange(0, length, 1)  # 生成0-9，步长为1
     ax.set_xticks(ticks)  # 生成刻度
     ax.set_yticks(ticks)
-    ax.set_xticklabels(names)  # 生成x轴标签
+    #ax.set_xticklabels(names)  # 生成x轴标签
     ax.set_yticklabels(names)
     plt.show()
 def showSPLOM(data,hue=None, hue_order=None, palette=None, vars=None, x_vars=None, y_vars=None, kind='scatter', diag_kind='hist', markers=None, size=2.5, aspect=1, dropna=True, plot_kws=None, diag_kws=None, grid_kws=None):

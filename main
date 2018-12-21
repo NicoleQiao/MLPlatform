@@ -7,6 +7,7 @@ import TrainData
 from sklearn import datasets
 
 #test display data
+
 '''
 diabetes = datasets.load_iris()
 data=LoadData.dataset2df(diabetes)
@@ -41,6 +42,21 @@ data_format_char=LoadData.getFormatChanArch('192.168.44.165',23,['BIBPM:R1OBPM02
 data_arapp=LoadData.getArchAppl('ss',['BPR:LIFE','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'04/28/2018 00:00:00','04/28/2018 00:00:30')
 data=LoadData.getLocalFile('E:','test.csv',0)
 '''
+#key=LoadData.getKey(ipaddr='192.168.44.165',pvnames=['BER:PMO','R3O:BI:DCCT:CUR'])
+server,engine=LoadData.connectChanArch(ipaddr='192.168.44.165')
+pvnames=['BIBPM:R1IBPM03:XPOS','BIBPM:R1OBPM02:XPOS','L:BI:BPM1:softao:y']
+start='2018/10/25 08:20:00'
+end='2018/10/28 08:40:00'
+#key=LoadData.getKeyWithTime(server,engine,pvnames=['BER:PMO','R3O:BI:DCCT:CUR','L:BI:BPM1:softao:y'],start='2018/10/13 08:35:00',end='2018/10/13 08:36:00')
+#print(key)
+data=LoadData.getFormatChanArch(server,engine,pvnames,start,end,merge_type='inner')
+print(data)
+#data=LoadData.getFormatChanArch(ipaddr='192.168.44.165',key=15,pvnames=['BER:LIFE'],start='2018/10/24 08:35:00',end='2018/10/24 08:36:00',merge_type='outer',interpolate_type='linear',fillna_type=None,how=0)
+
+#data1=LoadData.getFormatChanArch(ipaddr='192.168.44.165',key=15,pvnames=['MP:EALLBEAM'],start='2018/10/24 08:35:00',end='2018/10/24 08:36:00',merge_type='outer',interpolate_type='linear',fillna_type=None,how=0)
+#print(data1)
+#data2=LoadData.getFormatChanArch(ipaddr='192.168.44.165',key=15,pvnames=['BER:LIFE','MP:EALLBEAM'],start='2018/10/24 08:35:00',end='2018/10/24 08:36:00',merge_type='outer',interpolate_type='linear',fillna_type=None,how=0)
+#print(data2)
 
 #test merge df
 '''
@@ -55,7 +71,7 @@ print(a)
 '''
 
 '''
-LoadData.getKey('192.168.44.165',['BI:BSR:TUNEX'])
+LoadData.getKey('192.168.44.165',['L:BI:BPM1:softao:x','L:BI:BPM1:softao:y'])
 '''
 #test clean data
 '''
@@ -112,10 +128,17 @@ DisplayData.plot_predict(y_test, pred,title='score: %f' % score)
 '''
 data=LoadData.getFormatChanArch('192.168.44.165',16,['BESIII:LUMAVG','R3O:BI:DCCT:CUR','R4O:BI:DCCT:CUR'],'05/10/2018 08:35:00','05/10/2018 08:38:00','outer','linear',None,0)
 X_train, X_test, y_train, y_test=TrainData.split_data(data,'BESIII:LUMAVG')
-pred,score=TrainData.MLKNN(X_train, X_test, y_train, y_test,'shuffle')
+pred,score=TrainData.MLKNN_Regression(X_train, X_test, y_train, y_test,'shuffle')
 DisplayData.subplot_predict(y_test, pred,title='score: %f' % score)
 '''
 
+'''
+iris = datasets.load_iris()
+data=LoadData.dataset2df(iris)
+X_train, X_test, y_train, y_test=TrainData.split_data(data,"target")
+y_pred,score=TrainData.MLKNN_Classification(X_train, X_test, y_train, y_test,k=5,weights="distance")
+DisplayData.plot_predict(y_test,y_pred,title='score: %f' % score)
+'''
 
 #test Logistic Regression
 '''
@@ -175,8 +198,6 @@ data_X=data[['X_end','X_bpm1','X_bpm2']]
 X_train, X_test, y_train, y_test=TrainData.split_data(data_X,"X_end")
 TrainData.MLLinearRegression(X_train, X_test, y_train, y_test)
 '''
-
-
 
 
 
