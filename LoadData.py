@@ -4,12 +4,16 @@ import pandas as pd
 import numpy as np
 import xmlrpc.client
 import urllib.request,urllib.parse
-import json
 from interval import Interval
 from epics import ca
 
+#get TXT file data
+def getTXTpv(filepath,filename):
+    re=pd.read_table(filepath+'\\'+filename,header=None)
+    return re[0].values.tolist()
+
 #get live date with pvnames
-def generate_live_data(duration, pvnames):
+def generate_live_data(duration,period, pvnames):
     pvnamelist = tuple(pvnames)
     cols = list(pvnamelist)
     cols.insert(0, 'timestamp')
@@ -35,16 +39,19 @@ def generate_live_data(duration, pvnames):
             val = ca.get_complete(data[0])
             pvdata.append(val)
         alldata.append(pvdata)
-        time.sleep(1)
-        duration = duration - 1
+        time.sleep(period)
+        duration = duration - period
     ca.finalize_libca(maxtime=1.0)
     df = pd.DataFrame(alldata, columns=cols)
     return df
+
+#Load Channel Archiver data
 def connectChanArch(ipaddr):
     sp = '%s%s%s' % ('http://', ipaddr, '/cgi-bin/archiver/ArchiveDataServer.cgi')
     server = xmlrpc.client.ServerProxy(sp)
     engine = server.archiver.archives()
     return server,engine
+
 #using engine name to find key
 def getChanArchEngineKey(ipaddr,enginename):
     server,engine=connectChanArch(ipaddr)
@@ -57,11 +64,6 @@ def getChanArchEngineName(ipaddr,enginekey):
     for e in engine:
         if e.get('key')==enginekey:
             return e.get('name')
-
-#from format datetime to unix time
-def datetime2utc(datestr,dtformat='%Y/%m/%d %H:%M:%S'):
-    timestamp = time.mktime(datetime.datetime.strptime(datestr, dtformat).timetuple())
-    return timestamp
 
 #get history data from Channel Archiver
 #return dict with pv name and its data
@@ -84,7 +86,7 @@ def getChanArch(ipaddr, key, pvnames, start, end, how=0):
     return data
 
 
-def getKey(ipaddr,pvnames,):
+def getKey(ipaddr,pvnames):
     keypvlist={}
     server, engine = connectChanArch(ipaddr)
     namelist=[]
@@ -124,11 +126,8 @@ def getKeyWithTime(server, engine,pvnames,start,end):
         keypvlist[e['name']] = name
     for pv in pvnames:
         flag = 0
-        keylist = []
         for key, value in keypvlist.items():
             if pv in value:
-                #flag = 1
-                #print(pv, ":engine name is: ", key, ",engine key is:", value.get(pv))
                 enginestart=datetime2utc(key.split(':')[1].split('-')[0],'%y%m%d')
                 if key.split(':')[1].split('-')[1]=='now':
                     engineend=int(time.time())
@@ -138,7 +137,6 @@ def getKeyWithTime(server, engine,pvnames,start,end):
                 if (int(datetime2utc(start)) in enginezoom) and (int(datetime2utc(end)) in enginezoom):
                     flag=1
                     print(pv, ":engine name is: ", key, ",engine key is:", value.get(pv))
-                    # keylist=value.get(pv)
                     if value.get(pv) in keylists:
                         keylists[value.get(pv)].append(pv)
                     else:
@@ -147,22 +145,15 @@ def getKeyWithTime(server, engine,pvnames,start,end):
                 elif (int(datetime2utc(start)) in enginezoom) ^ (int(datetime2utc(end)) in enginezoom):
                     flag=1
                     print('Time period too big,more than mone engine,',pv, ":engine name is: ", key, ",engine key is:", value.get(pv)," Need to be in one engine to export.")
-                    # keylist.append(value.get(pv))
         rekey = keylists
         if flag == 0:
             print(pv, " not found.")
             rekey=None
-
     return rekey
 
-def compare_time(time1,time2):
-    s_time = time.mktime(time.strptime(time1,'%Y/%m/%d %H:%M:%S'))
-    e_time = time.mktime(time.strptime(time2,'%Y/%m/%d %H:%M:%S'))
-    print (s_time ,'is:',s_time)
-    print (e_time ,'is:',e_time)
-    return int(s_time) - int(e_time)
 
-#get history data from Channel Archiver
+
+#get formatted history data from Channel Archiver
 #return format dataFrame
 #ipaddr:server ip address
 # key:enginekey
@@ -172,63 +163,9 @@ def compare_time(time1,time2):
 #merge_type=inner:use biggest period data time, delete others
 #merge_type=number:user defined time period and merge
 #interpolate_type：{'linear','time','index','values', 'nearest','zero','slinear', 'quadratic','cubic','barycentric','krogh','polynomial', 'spline', 'piecewise_polynomial', 'from_derivatives', 'pchip', 'akima'},default linear
-#fillna_type:{'backfill', 'bfill', 'pad', 'ffill', None}, default None
+#fillna_type:{'backfill','pad', None}, default None
 # how:0-raw,1-spreadsheet,2-avg,3-plot-binning,4-linear
 # count:sample numbers,how==0-raw data number;others-get data with 1Hz
-def getFormatChanArch_old(ipaddr, key, pvnames, start, end, merge_type='inner',interpolate_type='linear',fillna_type=None,how=0,dropna=True):
-    df=pd.DataFrame()
-    server, engine = connectChanArch(ipaddr)
-    namelist = {}
-    names = server.archiver.names(key, '')
-    for name in names:
-        namelist[name['name']]=1
-    #print(namelist)
-    for pv in pvnames:
-        if pv not in namelist:
-            print(pv,"is not in this engine,please use getKey(ipaddr,pvnames) to find the right engine")
-            pvnames.remove(pv)
-    if how == 0:
-        count = 4 * (int(datetime2utc(end)) - int(datetime2utc(start)))
-    else:
-        count = int(datetime2utc(end)) - int(datetime2utc(start))
-    if merge_type.isdigit():
-        timeSeries = pd.date_range(start=start, end=end, freq=merge_type+'S')
-        merge_type = 'left'
-        df = pd.DataFrame(timeSeries, columns=['time'])
-    datalist = server.archiver.values(key, pvnames, int(datetime2utc(start)), 0, int(datetime2utc(end)), 0, count, how)
-    print(datalist)
-    for l in datalist:
-        timelist = []
-        valuelist = []
-        if len(l.get('values'))==1:
-            gettimestr=str(pd.to_datetime(l.get('values')[0].get('secs'),unit='s')+datetime.timedelta(hours=8))
-            gettime= time.mktime(time.strptime(gettimestr, '%Y-%m-%d %H:%M:%S'))
-            print(gettime)
-            starttime=time.mktime(time.strptime(start, '%Y/%m/%d %H:%M:%S'))
-            endtime=time.mktime(time.strptime(end, '%Y/%m/%d %H:%M:%S'))
-            if starttime>gettime or endtime<gettime:
-                timelist= list(pd.date_range(start=start, end=end, freq="1" + 'S'))
-                for i in range(len(timelist)):
-                    valuelist.append(l.get('values')[0].get('value')[0])
-        for d in l.get('values'):
-            timelist.append(pd.to_datetime(d.get('secs'),unit='s')+datetime.timedelta(hours=8))
-            valuelist.append(d.get('value')[0])
-
-        if df.empty:
-            df=pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first')
-        else:
-            df=pd.merge(df,pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first'),how=merge_type)
-
-    if(fillna_type!=None):
-        df=df.set_index(['time']).sort_index(ascending=True).fillna(method=fillna_type)
-    else:
-        df=df.set_index(['time']).sort_index(ascending=True).interpolate(method=interpolate_type)
-
-    if dropna==True:
-        return df.dropna(axis = 0)        # server, engine = connectChanArch(ipaddr)
-    else:
-        return  df
-
 def getFormatChanArch(server,engine, pvnames, start, end, merge_type='inner', interpolate_type='linear',
                           fillna_type=None, how=0, dropna=True):
         df = pd.DataFrame()
@@ -267,7 +204,6 @@ def getFormatChanArch(server,engine, pvnames, start, end, merge_type='inner', in
                     df = pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first')
                 else:
                     df = pd.merge(df, pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time',keep='first'),how=merge_type)
-                #print(df)
         if (fillna_type != None):
             df = df.set_index(['time']).sort_index(ascending=True).fillna(method=fillna_type)
         else:
@@ -285,7 +221,7 @@ def getArchAppl(data_retrieval_url,pvnames,start,end,merge_type):
         timeSeries = pd.date_range(start=start, end=end, freq=merge_type + 'S')
         merge_type = 'left'
         df = pd.DataFrame(timeSeries, columns=['time'])
-    data_retrieval_url='192.168.44.168:17665/retrieval'
+
     urlp='%s%s%s%s'%('http://',data_retrieval_url,'/data/getData.csv','?')
     getp = {}
     getp['pv']=''
@@ -298,34 +234,35 @@ def getArchAppl(data_retrieval_url,pvnames,start,end,merge_type):
         df=pd.merge(df,pd.read_csv(getdata),how=merge_type)
     #urllib.request.urlopen("http://192.168.44.168:17665/retrieval/data/getData.json?pv=HEBT_Mag%3AQV05%3AB&from=2018-04-02T14%3A00%3A00.000Z&to=2018-04-02T15%3A00%3A00.000Z")
     return df
+
 #use standard CSV File format
 def getLocalFile(filepath,filename,skiprows=0):
-    filetype=filename.split('.')[1]
+    filetype= filename.split('.')[1] if ('.' in filename) else ''
     if filetype.lower()=='csv':
-        data = pd.read_csv(filepath+'\\\\'+filename, encoding='gb2312', skiprows=skiprows).dropna()
+        try:
+            data = pd.read_csv(filepath+'\\\\'+filename, encoding='gb2312', skiprows=skiprows).dropna()
+            return data
+        except FileNotFoundError:
+            print("FileNotFoundError")
     else:
-        data = pd.read_table(filepath + '\\\\' + filename, encoding='gb2312', skiprows=skiprows).dropna()
-    return data
-# keep left dataFrame data
-#merge_type:outer inner left right
-def mergeDF(left,right,merge_type):
-    data=left.join(right,how=merge_type).dropna()
-    return data
-def getTXTpv(filepath,filename):
-    re=pd.read_table(filepath+'\\'+filename,header=None)
-    return re[0].values.tolist()
+        try:
+            data = pd.read_table(filepath + '\\\\' + filename, encoding='gb2312', skiprows=skiprows).dropna()
+            return data
+        except FileNotFoundError:
+            print("FileNotFoundError")
 
 def dataset2df(dataset):
     column = dataset.feature_names
     data = dataset.data
     target = dataset.target
-    df1 = pd.DataFrame(data, columns=column)
-    df1['target'] = target
-    return df1
+    datadf = pd.DataFrame(data, columns=column)
+    datadf['target'] = target
+    return datadf
+
 def np2df(data,col=""):
     if isinstance(data,np.ndarray):
         print("ndarray")
-        if isinstance(col,list) and len(col)== data.shape[1]:
+        if isinstance(col,list) and len(col)== data.ndim:
             df=pd.DataFrame(data,columns=col)
             return df
         else:
@@ -353,38 +290,9 @@ def df2np(data,datatype):
     else:
         return data.to_dict('dict')
 
-def getAnalogData():
-    result = pd.DataFrame()
-    start=pd.DataFrame()
-    end = pd.DataFrame()
-    bpm1 = pd.DataFrame()
-    bpm2 = pd.DataFrame()
-    path=r"D:\data\analog"
-    for i in range(1,1000):
-        data=pd.read_table(path+r"\\"+"track.obs0001.p"+str(i).zfill(4)+"dat",skiprows=8,sep="\s+",header=None,usecols=[2,4])
-        start=start.append(data.loc[0])
-        end=end.append(data.loc[1])
-        data = pd.read_table(path + r"\\" + "track.obs0002.p"+str(i).zfill(4)+"dat", skiprows=8, sep="\s+", header=None, usecols=[2, 4])
-        bpm1 = start.append(data.loc[0])
-        data = pd.read_table(path + r"\\" + "track.obs0003.p" + str(i).zfill(4) + "dat", skiprows=8, sep="\s+", header=None,usecols=[2, 4])
-        bpm2 = start.append(data.loc[0])
-    start_names=['X_start','Y_start']
-    start.columns=start_names
-    start.reset_index(drop=True,inplace=True)
-    end_names=['X_end','Y_end']
-    end.columns=end_names
-    end.reset_index(drop=True,inplace=True)
-    bpm1_names = ['X_bpm1', 'Y_bpm1']
-    bpm1.columns = bpm1_names
-    bpm1.reset_index(drop=True, inplace=True)
-    bpm2_names = ['X_bpm2', 'Y_bpm2']
-    bpm2.columns = bpm2_names
-    bpm2.reset_index(drop=True, inplace=True)
-    result=start.join(end).join(bpm1).join(bpm2)
-    return result
-
 def df2other(data,type,path_or_buf=None,encoding='utf-8'):
     if type=='csv':
+        print("dasda")
         return data.to_csv(path_or_buf=path_or_buf, encoding=encoding)
     elif type=='html':
         return data.to_html(buf=path_or_buf)
@@ -398,6 +306,20 @@ def df2other(data,type,path_or_buf=None,encoding='utf-8'):
         print('Wrong output type! Options:csv,excel,json,html,clipboard.')
         return None
 
+#from format datetime to unix time
+def datetime2utc(datestr,dtformat='%Y/%m/%d %H:%M:%S'):
+    timestamp = time.mktime(datetime.datetime.strptime(datestr, dtformat).timetuple())
+    return timestamp
 
+# keep left dataFrame data
+#merge_type:outer inner left right
+def mergeDF(left,right,merge_type='left'):
+    data=left.join(right,how=merge_type).dropna()
+    return data
 
-
+def compare_time(time1,time2):
+    s_time = time.mktime(time.strptime(time1,'%Y/%m/%d %H:%M:%S'))
+    e_time = time.mktime(time.strptime(time2,'%Y/%m/%d %H:%M:%S'))
+    print (s_time ,'is:',s_time)
+    print (e_time ,'is:',e_time)
+    return int(s_time) - int(e_time)
