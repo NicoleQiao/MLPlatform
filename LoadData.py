@@ -11,7 +11,6 @@ from epics import ca
 def getTXTpv(filepath,filename):
     re=pd.read_table(filepath+'\\'+filename,header=None)
     return re[0].values.tolist()
-
 #get live date with pvnames
 def generate_live_data(duration,period, pvnames):
     pvnamelist = tuple(pvnames)
