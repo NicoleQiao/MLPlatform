@@ -169,12 +169,14 @@ def getKeyWithTime(server, engine,pvnames,start,end):
 def getFormatChanArch(server,engine, pvnames, start, end, merge_type='inner', interpolate_type='linear',
                           fillna_type=None, how=0, dropna=True):
         df = pd.DataFrame()
+        result = pd.DataFrame()
+        dl=[]
         keylists = getKeyWithTime(server, engine, pvnames, start, end)
         if keylists=={}:
             print('Please change time period.')
             return None
         if how == 0:
-            count = 4 * (int(datetime2utc(end)) - int(datetime2utc(start)))
+            count =4 * (int(datetime2utc(end)) - int(datetime2utc(start)))
         else:
             count = int(datetime2utc(end)) - int(datetime2utc(start))
         if merge_type.isdigit():
@@ -182,37 +184,46 @@ def getFormatChanArch(server,engine, pvnames, start, end, merge_type='inner', in
             merge_type = 'left'
             df = pd.DataFrame(timeSeries, columns=['time'])
         for key in keylists:
-            datalist = server.archiver.values(key, keylists[key], int(datetime2utc(start)), 0, int(datetime2utc(end)), 0, count,how)
-            #print(datalist)
-            for l in datalist:
-                timelist = []
-                valuelist = []
-                if len(l.get('values')) == 1:
-                    gettimestr = str(pd.to_datetime(l.get('values')[0].get('secs'), unit='s') + datetime.timedelta(hours=8))
-                    gettime = time.mktime(time.strptime(gettimestr, '%Y-%m-%d %H:%M:%S'))
-                    print(gettime)
-                    starttime = time.mktime(time.strptime(start, '%Y/%m/%d %H:%M:%S'))
-                    endtime = time.mktime(time.strptime(end, '%Y/%m/%d %H:%M:%S'))
-                    if starttime > gettime or endtime < gettime:
-                        timelist = list(pd.date_range(start=start, end=end, freq="1" + 'S'))
-                        for i in range(len(timelist)):
-                            valuelist.append(l.get('values')[0].get('value')[0])
-                for d in l.get('values'):
-                    timelist.append(pd.to_datetime(d.get('secs'), unit='s') + datetime.timedelta(hours=8))
-                    valuelist.append(d.get('value')[0])
-                if df.empty:
-                    df = pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first')
-                else:
-                    df = pd.merge(df, pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time',keep='first'),how=merge_type)
+            datalist={}
+            datalen=10000
+            newstart=int(datetime2utc(start))
+            while datalen==10000:
+                datalist = server.archiver.values(key, keylists[key], newstart, 0, int(datetime2utc(end)), 0, count,how)
+                datalen=len(datalist[0].get('values'))
+                #print('len:',datalen)
+                #print(datalist[0].get('values')[datalen-1].get('secs'))
+                newstart = datalist[0].get('values')[datalen-1].get('secs')
+                dl.append(datalist)
+            for d in dl:
+                for l in d:
+                    timelist = []
+                    valuelist = []
+                    if len(l.get('values')) == 1:
+                        gettimestr = str(pd.to_datetime(l.get('values')[0].get('secs'), unit='s') + datetime.timedelta(hours=8))
+                        gettime = time.mktime(time.strptime(gettimestr, '%Y-%m-%d %H:%M:%S'))
+                        print(gettime)
+                        starttime = time.mktime(time.strptime(start, '%Y/%m/%d %H:%M:%S'))
+                        endtime = time.mktime(time.strptime(end, '%Y/%m/%d %H:%M:%S'))
+                        if starttime > gettime or endtime < gettime:
+                            timelist = list(pd.date_range(start=start, end=end, freq="1" + 'S'))
+                            for i in range(len(timelist)):
+                                valuelist.append(l.get('values')[0].get('value')[0])
+                    for d in l.get('values'):
+                        timelist.append(pd.to_datetime(d.get('secs'), unit='s') + datetime.timedelta(hours=8))
+                        valuelist.append(d.get('value')[0])
+                    if df.empty:
+                        df = pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time', keep='first')
+                    else:
+                        df = pd.merge(df, pd.DataFrame({'time': timelist, l.get('name'): valuelist}).drop_duplicates('time',keep='first'),how=merge_type)
+                result=pd.concat([result,df])
         if (fillna_type != None):
-            df = df.set_index(['time']).sort_index(ascending=True).fillna(method=fillna_type)
+            result = result.set_index(['time']).sort_index(ascending=True).fillna(method=fillna_type)
         else:
-            df = df.set_index(['time']).sort_index(ascending=True).interpolate(method=interpolate_type)
-
+            result = result.set_index(['time']).sort_index(ascending=True).interpolate(method=interpolate_type)
         if dropna == True:
-            return df.dropna(axis=0)
+            return result.dropna(axis=0)
         else:
-            return df
+            return result
 
 #get history data from Archiver Appliance
 def getArchAppl(data_retrieval_url,pvnames,start,end,merge_type):
