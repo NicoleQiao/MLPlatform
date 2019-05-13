@@ -39,7 +39,6 @@ data2=pd.read_csv(filename2)
 ind_2=data2.loc[range2A:range2B, ind2]
 val_2=data2.loc[range2A:range2B, val2]
 val_2val=val_2.values
-
 ser1 = pd.Series(val_1val,index=ind_1- BASE_TIME)   #[index2[1],index2[2],index2[3],index2[4],index2[5],index2[6],index2[7],index2[8],index2[9],index2[10]]
 
 ser2 = pd.Series(val_2val,index=ind_2- BASE_TIME)
