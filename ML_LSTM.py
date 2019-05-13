@@ -103,7 +103,7 @@ def run_eval(sess, test_X, test_y,title=''):
 
 
 # 导入数据
-f = open('C:/Users/qiaoys/Desktop/LSTM/vadata2.csv')
+f = open('data/vadata2.csv')
 df = pd.read_csv(f)
 titles = df.columns
 data = np.array(df[titles[2]])
