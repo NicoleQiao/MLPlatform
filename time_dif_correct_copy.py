@@ -34,6 +34,7 @@ val2=co_name
 range2A=1
 range2B=8000
 data2=pd.read_csv(filename2)
+
 #index1=data[ind1][1:100]
 #index2=data[ind2][0:10]
 ind_2=data2.loc[range2A:range2B, ind2]
